@@ -2,7 +2,6 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const app = express();
 const bcrypt = require("bcrypt");
-// const { v4: uuidv4 } = require("uuid");
 app.use(express.json());
 
 const users = [
@@ -36,7 +35,6 @@ app.post("/users", async (req, res) => {
   }
 });
 
-// const userTokenMap = new Map();
 app.post("/users/login", async (req, res) => {
   const user = users.find((user) => user.name === req.body.name);
   if (user == null) {
@@ -50,11 +48,7 @@ app.post("/users/login", async (req, res) => {
           token,
         });
       });
-      // res.send("success");
-      // const uuidToken = uuidv4();
-      // userTokenMap.set(uuidToken, user);
-
-      // res.send(`Success, your token is ${uuidToken}`);
+ 
     } else {
       res.send("incorrect passwpord");
     }
@@ -64,18 +58,10 @@ app.post("/users/login", async (req, res) => {
 });
 
 app.post("/greeting", verifyToken, (req, res) => {
-  // const uuidToken = req.header("Authorization");
 
-  // const user = userTokenMap.get(uuidToken);
-  jwt.verify(req.token, "secretkey", (err, authData) => {
-    if (err) {
-      res.send(403);
-    } else {
-      res.json({
-        message: "good morning",
-        authData,
-      });
-    }
+
+  res.json({
+    message: "good morning " + req.authData.user.name,
   });
 });
 
@@ -85,8 +71,14 @@ function verifyToken(req, res, next) {
     const bearer = bearerHeader.split(" ");
     const bearerToken = bearer[1];
     req.token = bearerToken;
-    console.log(req.token);
-    next();
+    jwt.verify(req.token, "secretkey", (err, authData) => {
+      if (err) {
+        res.sendStatus(403);
+        return;
+      }
+      req.authData = authData;
+      next();
+    });
   } else {
     res.sendStatus(403);
   }
